@@ -1,45 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../supabaseClient.js'
 
-function LogEntry({ entry, showCharacter }) {
-  const [expanded, setExpanded] = useState(false)
-  const isLong = entry.content && entry.content.length > 220
-
-  return (
-    <div className="log-entry">
-      <div className="log-entry__meta">
-        {showCharacter && entry.characters && (
-          <Link className="log-entry__character" to={`/character/${entry.characters.slug}`}>
-            {entry.characters.pair_name || entry.characters.name}
-          </Link>
-        )}
-        {entry.platform && <span className="log-entry__platform">· {entry.platform}</span>}
-        <span className="log-entry__date">
-          {new Date(entry.created_at).toLocaleDateString('ko-KR')}
-        </span>
-      </div>
-      <div className={`log-entry__content ${!expanded && isLong ? 'clamped' : ''}`}>
-        {entry.content}
-      </div>
-      {isLong && (
-        <button className="log-entry__toggle" onClick={() => setExpanded((v) => !v)}>
-          {expanded ? '접기' : '더 보기'}
-        </button>
-      )}
-    </div>
-  )
-}
+const BUCKET = 'gallery-images'
 
 /**
- * characterId가 있으면 해당 캐릭터의 로그만, 없으면 전체 로그를 보여줍니다.
+ * characterId가 있으면 해당 캐릭터의 로그만, 없으면 전체 로그를 게시판 형식으로 보여줍니다.
  * showForm이 true면 새 로그 작성 폼도 함께 표시합니다 (characterId 필요).
  */
 export default function ChatLogSection({ characterId, showForm = false, limit, title = '채팅 로그', viewAllTo }) {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ platform: '', content: '' })
+  const [form, setForm] = useState({ title: '', content: '' })
   const [saving, setSaving] = useState(false)
+  const [insertingImage, setInsertingImage] = useState(false)
+  const textareaRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   async function loadLogs() {
     if (!isSupabaseConfigured) {
@@ -49,7 +25,7 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
     setLoading(true)
     let query = supabase
       .from('chat_logs')
-      .select('*, characters(slug, name, pair_name)')
+      .select('id, title, created_at, characters(slug, name, pair_name)')
       .order('created_at', { ascending: false })
 
     if (characterId) query = query.eq('character_id', characterId)
@@ -67,18 +43,53 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.content) return
+    if (!form.title || !form.content) return
     setSaving(true)
     const { error } = await supabase
       .from('chat_logs')
       .insert([{ ...form, character_id: characterId }])
     setSaving(false)
     if (!error) {
-      setForm({ platform: '', content: '' })
+      setForm({ title: '', content: '' })
       loadLogs()
     } else {
       alert('저장에 실패했어요: ' + error.message)
     }
+  }
+
+  // 글 작성 중 커서 위치에 이미지를 업로드해서 마크다운 형식으로 삽입합니다.
+  async function handleImageInsert(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setInsertingImage(true)
+
+    const fileExt = file.name.split('.').pop()
+    const filePath = `logs/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage.from(BUCKET).upload(filePath, file)
+    if (uploadError) {
+      setInsertingImage(false)
+      alert('이미지 업로드 실패: ' + uploadError.message)
+      return
+    }
+
+    const { data: publicUrlData } = supabase.storage.from(BUCKET).getPublicUrl(filePath)
+    const imageTag = `\n![](${publicUrlData.publicUrl})\n`
+
+    const textarea = textareaRef.current
+    if (textarea && typeof textarea.selectionStart === 'number') {
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      setForm((f) => ({
+        ...f,
+        content: f.content.slice(0, start) + imageTag + f.content.slice(end),
+      }))
+    } else {
+      setForm((f) => ({ ...f, content: f.content + imageTag }))
+    }
+
+    setInsertingImage(false)
+    e.target.value = ''
   }
 
   return (
@@ -93,16 +104,34 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
           <h3>새 로그 남기기</h3>
           <div className="form-row">
             <input
-              placeholder="플랫폼 (예: Character.AI, 자체 봇 등)"
-              value={form.platform}
-              onChange={(e) => setForm({ ...form, platform: e.target.value })}
+              placeholder="글 제목"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
             />
           </div>
           <div className="form-row">
             <textarea
-              placeholder="대화 내용을 붙여넣으세요"
+              ref={textareaRef}
+              placeholder="대화 내용을 붙여넣으세요. '이미지 삽입' 버튼으로 커서 위치에 이미지를 넣을 수 있어요."
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
+            />
+          </div>
+          <div className="form-row form-row--tools">
+            <button
+              type="button"
+              className="btn btn--ghost"
+              disabled={insertingImage}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {insertingImage ? '삽입 중…' : '+ 이미지 삽입'}
+            </button>
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleImageInsert}
+              style={{ display: 'none' }}
             />
           </div>
           <button className="btn" disabled={saving}>
@@ -119,9 +148,25 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
         </p>
       )}
 
-      {logs.map((entry) => (
-        <LogEntry key={entry.id} entry={entry} showCharacter={!characterId} />
-      ))}
+      {logs.length > 0 && (
+        <div className="log-board">
+          {logs.map((entry) => (
+            <Link key={entry.id} to={`/log/${entry.id}`} className="log-board__row">
+              <span className="log-board__title">{entry.title}</span>
+              <span className="log-board__meta">
+                {!characterId && entry.characters && (
+                  <span className="log-board__character">
+                    {entry.characters.pair_name || entry.characters.name}
+                  </span>
+                )}
+                <span className="log-board__date">
+                  {new Date(entry.created_at).toLocaleDateString('ko-KR')}
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   )
 }

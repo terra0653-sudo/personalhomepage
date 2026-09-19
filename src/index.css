@@ -307,62 +307,97 @@ section + section {
   margin-top: 4px;
 }
 
-/* --- Chat log entries --- */
-.log-entry {
-  border: 1px solid var(--line);
-  background: var(--bg-raised);
-  border-radius: 10px;
-  padding: 18px 20px;
-  margin-bottom: 14px;
+/* --- Chat log board --- */
+.log-board {
+  border-top: 1px solid var(--line);
 }
 
-.log-entry__meta {
+.log-board__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  color: var(--text);
+  transition: color 0.15s ease;
+}
+
+.log-board__row:hover {
+  color: var(--nebula-cyan);
+}
+
+.log-board__title {
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-board__meta {
   display: flex;
   gap: 10px;
   align-items: baseline;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--muted);
 }
 
-.log-entry__character {
-  font-weight: 600;
+.log-board__character {
   color: var(--nebula-violet);
-  font-size: 15px;
+}
+
+/* --- Log detail page --- */
+.log-detail__back {
+  margin-bottom: 20px;
+}
+
+.log-detail__back a {
+  font-size: 14px;
+  color: var(--muted);
   text-decoration: none;
 }
 
-.log-entry__platform {
-  font-size: 13px;
-  color: var(--muted);
+.log-detail__back a:hover {
+  color: var(--nebula-cyan);
 }
 
-.log-entry__date {
-  font-size: 13px;
-  color: var(--muted);
-  margin-left: auto;
-}
-
-.log-entry__content {
-  white-space: pre-wrap;
-  font-size: 15px;
+.log-detail__title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  margin: 0 0 8px;
   color: var(--text);
 }
 
-.log-entry__content.clamped {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.log-detail__date {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 24px;
 }
 
-.log-entry__toggle {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 13px;
-  padding: 8px 0 0;
-  cursor: pointer;
-  text-decoration: underline;
+.log-detail__content {
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.log-detail__text {
+  white-space: pre-wrap;
+}
+
+.log-detail__image {
+  display: block;
+  max-width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  margin: 16px 0;
+}
+
+/* --- Form tool row (이미지 삽입 버튼) --- */
+.form-row--tools {
+  margin-bottom: 16px;
 }
 
 /* --- Forms --- */

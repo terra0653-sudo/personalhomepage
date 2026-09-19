@@ -34,7 +34,7 @@ create table characters (
 create table chat_logs (
   id uuid primary key default gen_random_uuid(),
   character_id uuid references characters(id) on delete cascade,
-  platform text,
+  title text not null,
   content text not null,
   created_at timestamptz default now()
 );
@@ -84,7 +84,9 @@ create policy "public insert commissions" on commissions for insert with check (
 > `insert` 정책을 `auth.uid() is not null` 조건으로 바꾸는 걸 추천해요.
 > 이 부분은 필요해지면 다시 요청해주시면 붙여드릴게요.
 
-3. **Storage** 메뉴에서 `gallery-images` 라는 이름으로 새 버킷 생성, **Public bucket** 체크
+3. **Storage** 메뉴에서 아래 두 버킷을 각각 생성 (둘 다 **Public bucket** 체크)
+   - `gallery-images` — 커미션 갤러리용
+   - `log-images` — 채팅 로그 본문에 삽입하는 이미지용
 4. **Project Settings > API** 에서 `Project URL`과 `anon public` 키를 복사
 
 ## 3. 환경변수 설정
@@ -140,6 +142,24 @@ netlify deploy --prod
 CLI 사용 시에도 Netlify 사이트 설정에서 환경변수는 별도로 등록해야 합니다
 (로컬 `.env`는 Netlify 서버에 자동으로 올라가지 않아요).
 
+## 6. 게시판 형식 + 본문 이미지 삽입
+
+로그 작성 폼에서 "플랫폼" 입력란을 없애고 **제목**을 받도록 바꿨어요. 목록은
+제목만 나열되는 게시판 형식이고, 제목을 클릭하면 별도의 상세 페이지(`/log/:id`)로
+이동해서 본문 전체를 볼 수 있어요. 갤러리는 기존처럼 그리드 형식 그대로 유지했습니다.
+작성 폼의 "+ 이미지 삽입" 버튼을 누르면 이미지가 업로드되고, 커서가 있던 위치에
+`![](이미지주소)` 형태로 자동 삽입되며, 상세 페이지에서는 그 자리에 실제 이미지로 표시됩니다.
+(이미지는 갤러리와 같은 `gallery-images` 버킷의 `logs/` 폴더에 저장됩니다 — 새 버킷을
+따로 만들지 않아도 돼요.)
+
+**이미 테이블을 만드신 경우 반영해야 할 변경사항**
+
+Supabase **Table Editor** → `chat_logs` 테이블에서:
+1. `title` (text) 컬럼 추가 — 필수로 쓰려면 "Is Nullable" 체크 해제
+2. 기존 `platform` 컬럼은 더 이상 쓰지 않아요. 삭제하거나 그냥 두셔도 무방합니다.
+
+버킷은 기존에 만들어두신 `gallery-images` 그대로 쓰면 되고, 별도 정책 추가는 필요 없어요.
+
 ## 폴더 구조
 
 ```
@@ -151,6 +171,7 @@ src/
     CharacterPage.jsx       ← 캐릭터별 개별 페이지 (/character/:slug)
     ChatLogsPage.jsx        ← 전체 로그 아카이브 (/logs)
     GalleryPage.jsx         ← 전체 갤러리 아카이브 (/gallery)
+    LogDetailPage.jsx       ← 로그 상세 페이지 (/log/:id, 본문+이미지)
   components/
     Nav.jsx                ← 상단 메뉴
     CharacterBanners.jsx   ← 홈 화면 캐릭터 배너 그리드
