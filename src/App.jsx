@@ -1,9 +1,11 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Nav from './components/Nav.jsx'
 import Home from './pages/Home.jsx'
 import ChatLogsPage from './pages/ChatLogsPage.jsx'
 import GalleryPage from './pages/GalleryPage.jsx'
-import CharacterPage from './pages/CharacterPage.jsx'
+import CharacterLayout from './pages/CharacterLayout.jsx'
+import CharacterLogsPage from './pages/CharacterLogsPage.jsx'
+import CharacterGalleryPage from './pages/CharacterGalleryPage.jsx'
 import LogDetailPage from './pages/LogDetailPage.jsx'
 import { isSupabaseConfigured } from './supabaseClient.js'
 
@@ -24,7 +26,11 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/logs" element={<ChatLogsPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
-        <Route path="/character/:slug" element={<CharacterPage />} />
+        <Route path="/character/:slug" element={<CharacterLayout />}>
+          <Route index element={<Navigate to="logs" replace />} />
+          <Route path="logs" element={<CharacterLogsPage />} />
+          <Route path="gallery" element={<CharacterGalleryPage />} />
+        </Route>
         <Route path="/log/:id" element={<LogDetailPage />} />
       </Routes>
 
