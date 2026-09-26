@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TextStyle from '@tiptap/extension-text-style'
@@ -19,8 +19,15 @@ const FONT_SIZES = [
  * 이후 변화는 onChange(html)로만 부모에 전달합니다.
  * onReady(editor)로 Tiptap 인스턴스 자체를 부모에 넘겨서,
  * 부모가 이미지 삽입·초기화(clearContent) 등을 직접 제어할 수 있게 합니다.
+ *
+ * "코드 보기"를 켜면 서식 화면 대신 HTML 소스를 그대로 보여주는 textarea로 바뀌고,
+ * 직접 태그를 써서 편집할 수 있습니다. 다시 끄면 그 코드가 서식(굵게/이미지 등)으로
+ * 반영된 화면으로 전환됩니다. 저장되는 값(HTML)은 두 모드 어느 쪽에서 편집해도 동일해요.
  */
 export default function RichTextEditor({ defaultValue = '', onChange, onReady, placeholder }) {
+  const [sourceMode, setSourceMode] = useState(false)
+  const [sourceValue, setSourceValue] = useState('')
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -47,12 +54,24 @@ export default function RichTextEditor({ defaultValue = '', onChange, onReady, p
 
   if (!editor) return null
 
+  function enterSourceMode() {
+    setSourceValue(editor.getHTML())
+    setSourceMode(true)
+  }
+
+  function exitSourceMode() {
+    // 두 번째 인자(true)를 줘야 이 변경이 onUpdate(=onChange)로도 전달돼요.
+    editor.commands.setContent(sourceValue, true)
+    setSourceMode(false)
+  }
+
   return (
     <div className="rte">
       <div className="rte-toolbar">
         <button
           type="button"
           className={editor.isActive('bold') ? 'active' : ''}
+          disabled={sourceMode}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <b>B</b>
@@ -60,6 +79,7 @@ export default function RichTextEditor({ defaultValue = '', onChange, onReady, p
         <button
           type="button"
           className={editor.isActive('italic') ? 'active' : ''}
+          disabled={sourceMode}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <i>I</i>
@@ -67,6 +87,7 @@ export default function RichTextEditor({ defaultValue = '', onChange, onReady, p
         <button
           type="button"
           className={editor.isActive('strike') ? 'active' : ''}
+          disabled={sourceMode}
           onClick={() => editor.chain().focus().toggleStrike().run()}
         >
           <s>S</s>
@@ -74,6 +95,7 @@ export default function RichTextEditor({ defaultValue = '', onChange, onReady, p
         <span className="rte-toolbar__sep" />
         <select
           defaultValue=""
+          disabled={sourceMode}
           onChange={(e) => {
             const size = e.target.value
             if (size) {
@@ -90,8 +112,29 @@ export default function RichTextEditor({ defaultValue = '', onChange, onReady, p
             </option>
           ))}
         </select>
+        <span className="rte-toolbar__sep" />
+        <button
+          type="button"
+          className={sourceMode ? 'active rte-toolbar__code-btn' : 'rte-toolbar__code-btn'}
+          onClick={() => (sourceMode ? exitSourceMode() : enterSourceMode())}
+        >
+          {'</>'} {sourceMode ? '미리보기' : '코드 보기'}
+        </button>
       </div>
-      <EditorContent editor={editor} />
+
+      {sourceMode ? (
+        <textarea
+          className="rte-source"
+          value={sourceValue}
+          onChange={(e) => {
+            setSourceValue(e.target.value)
+            onChange?.(e.target.value)
+          }}
+          spellCheck={false}
+        />
+      ) : (
+        <EditorContent editor={editor} />
+      )}
     </div>
   )
 }
