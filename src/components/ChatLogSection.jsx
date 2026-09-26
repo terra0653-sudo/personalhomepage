@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../supabaseClient.js'
+import RichTextEditor from './RichTextEditor.jsx'
 
 const BUCKET = 'gallery-images'
 
@@ -11,10 +12,12 @@ const BUCKET = 'gallery-images'
 export default function ChatLogSection({ characterId, showForm = false, limit, title = '채팅 로그', viewAllTo }) {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ title: '', content: '' })
+  const [logTitle, setLogTitle] = useState('')
   const [saving, setSaving] = useState(false)
   const [insertingImage, setInsertingImage] = useState(false)
-  const textareaRef = useRef(null)
+
+  const editorRef = useRef(null) // Tiptap 에디터 인스턴스
+  const contentRef = useRef('') // 에디터 HTML을 매 입력마다 저장 (리렌더 없이)
   const fileInputRef = useRef(null)
 
   async function loadLogs() {
@@ -43,24 +46,28 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.title || !form.content) return
+    const content = contentRef.current
+    if (!logTitle || !content || content === '<p></p>') return
+
     setSaving(true)
     const { error } = await supabase
       .from('chat_logs')
-      .insert([{ ...form, character_id: characterId }])
+      .insert([{ title: logTitle, content, character_id: characterId }])
     setSaving(false)
+
     if (!error) {
-      setForm({ title: '', content: '' })
+      setLogTitle('')
+      contentRef.current = ''
+      editorRef.current?.commands.clearContent()
       loadLogs()
     } else {
       alert('저장에 실패했어요: ' + error.message)
     }
   }
 
-  // 글 작성 중 커서 위치에 이미지를 업로드해서 마크다운 형식으로 삽입합니다.
   async function handleImageInsert(e) {
     const file = e.target.files[0]
-    if (!file) return
+    if (!file || !editorRef.current) return
     setInsertingImage(true)
 
     const fileExt = file.name.split('.').pop()
@@ -74,19 +81,7 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
     }
 
     const { data: publicUrlData } = supabase.storage.from(BUCKET).getPublicUrl(filePath)
-    const imageTag = `\n![](${publicUrlData.publicUrl})\n`
-
-    const textarea = textareaRef.current
-    if (textarea && typeof textarea.selectionStart === 'number') {
-      const start = textarea.selectionStart
-      const end = textarea.selectionEnd
-      setForm((f) => ({
-        ...f,
-        content: f.content.slice(0, start) + imageTag + f.content.slice(end),
-      }))
-    } else {
-      setForm((f) => ({ ...f, content: f.content + imageTag }))
-    }
+    editorRef.current.chain().focus().setImage({ src: publicUrlData.publicUrl }).run()
 
     setInsertingImage(false)
     e.target.value = ''
@@ -101,23 +96,18 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
 
       {isSupabaseConfigured && showForm && characterId && (
         <form className="form-card" onSubmit={handleSubmit}>
-          <h3>새 로그 남기기</h3>
           <div className="form-row">
-            <input
-              placeholder="글 제목"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-            />
+            <input placeholder="글 제목" value={logTitle} onChange={(e) => setLogTitle(e.target.value)} />
           </div>
-          <div className="form-row">
-            <textarea
-              ref={textareaRef}
-              placeholder="대화 내용을 붙여넣으세요. '이미지 삽입' 버튼으로 커서 위치에 이미지를 넣을 수 있어요."
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-            />
-          </div>
-          <div className="form-row form-row--tools">
+
+          <RichTextEditor
+            defaultValue=""
+            placeholder="대화 내용을 붙여넣으세요"
+            onReady={(editor) => (editorRef.current = editor)}
+            onChange={(html) => (contentRef.current = html)}
+          />
+
+          <div className="form-actions">
             <button
               type="button"
               className="btn btn--ghost"
@@ -133,10 +123,10 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
               onChange={handleImageInsert}
               style={{ display: 'none' }}
             />
+            <button className="btn" disabled={saving}>
+              {saving ? '저장 중…' : '저장하기'}
+            </button>
           </div>
-          <button className="btn" disabled={saving}>
-            {saving ? '저장 중…' : '저장하기'}
-          </button>
         </form>
       )}
 

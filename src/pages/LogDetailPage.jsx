@@ -2,37 +2,6 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../supabaseClient.js'
 
-// 본문 안의 ![](이미지url) 형식을 실제 이미지로, 나머지는 줄바꿈 유지 텍스트로 변환합니다.
-function renderLogContent(content) {
-  const regex = /!\[[^\]]*\]\(([^)]+)\)/g
-  const parts = []
-  let lastIndex = 0
-  let match
-  let key = 0
-
-  while ((match = regex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(
-        <span key={key++} className="log-detail__text">
-          {content.slice(lastIndex, match.index)}
-        </span>
-      )
-    }
-    parts.push(<img key={key++} className="log-detail__image" src={match[1]} alt="" loading="lazy" />)
-    lastIndex = regex.lastIndex
-  }
-
-  if (lastIndex < content.length) {
-    parts.push(
-      <span key={key++} className="log-detail__text">
-        {content.slice(lastIndex)}
-      </span>
-    )
-  }
-
-  return parts
-}
-
 export default function LogDetailPage() {
   const { id } = useParams()
   const [entry, setEntry] = useState(null)
@@ -81,7 +50,7 @@ export default function LogDetailPage() {
     <section className="log-detail">
       <div className="log-detail__back">
         {entry.characters ? (
-          <Link to={`/character/${entry.characters.slug}`}>
+          <Link to={`/character/${entry.characters.slug}/logs`}>
             ← {entry.characters.pair_name || entry.characters.name}
           </Link>
         ) : (
@@ -90,7 +59,9 @@ export default function LogDetailPage() {
       </div>
       <h1 className="log-detail__title">{entry.title}</h1>
       <div className="log-detail__date">{new Date(entry.created_at).toLocaleDateString('ko-KR')}</div>
-      <div className="log-detail__content">{renderLogContent(entry.content || '')}</div>
+      {/* entry.content는 에디터(Tiptap)가 만든 HTML이라 그대로 렌더링합니다.
+          로그는 본인만 작성하는 개인 공간이라 별도 살균(sanitize) 없이 표시해요. */}
+      <div className="log-detail__content" dangerouslySetInnerHTML={{ __html: entry.content }} />
     </section>
   )
 }

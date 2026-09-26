@@ -406,11 +406,24 @@ section + section {
   line-height: 1.8;
 }
 
-.log-detail__text {
-  white-space: pre-wrap;
+.log-detail__content p {
+  margin: 0 0 1em;
 }
 
-.log-detail__image {
+.log-detail__content h1,
+.log-detail__content h2,
+.log-detail__content h3 {
+  font-family: var(--font-display);
+  color: var(--text);
+  margin: 1.2em 0 0.5em;
+}
+
+.log-detail__content strong {
+  color: var(--nebula-pink);
+}
+
+.log-detail__content .rte-image,
+.log-detail__content img {
   display: block;
   max-width: 100%;
   border-radius: 10px;
@@ -418,9 +431,97 @@ section + section {
   margin: 16px 0;
 }
 
-/* --- Form tool row (이미지 삽입 버튼) --- */
-.form-row--tools {
+/* --- Rich text editor (로그 작성용 Tiptap) --- */
+.rte {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
   margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.rte-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+.rte-toolbar button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.rte-toolbar button:hover {
+  color: var(--text);
+  background: var(--bg-raised-2);
+}
+
+.rte-toolbar button.active {
+  color: var(--nebula-cyan);
+  border-color: var(--nebula-cyan);
+  background: var(--bg-raised-2);
+}
+
+.rte-toolbar__sep {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+  margin: 0 6px;
+}
+
+.rte-toolbar select {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.rte-content {
+  min-height: 160px;
+  padding: 12px 14px;
+  outline: none;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.rte-content p {
+  margin: 0 0 0.9em;
+}
+
+.rte-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.rte-content .rte-image {
+  display: block;
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+/* --- Form bottom action row (이미지 삽입 좌측 / 저장 우측) --- */
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 /* --- Forms --- */
