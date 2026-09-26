@@ -14,6 +14,6 @@ export const siteConfig = {
   // 지인들의 개인 홈페이지 배너. 홈 화면 자기소개 바로 아래에 표시되고,
   // 클릭하면 새 탭으로 해당 사이트가 열립니다. 배열을 비워두면 섹션 자체가 안 보여요.
   friends: [
-    // { name: '안단티 님', url: 'https://andanti.dothome.co.kr/', imageUrl: 'https://andanti.dothome.co.kr/data/file/Banner/2b7210cc7f360e6181b3fa32480ae1ac_WumFLw1I_db64a3b46ff04bd05a0bf257046263be788fe2d3.gif' },
+     { name: '안단티 님', url: 'https://andanti.dothome.co.kr/', imageUrl: 'https://andanti.dothome.co.kr/data/file/Banner/2b7210cc7f360e6181b3fa32480ae1ac_WumFLw1I_db64a3b46ff04bd05a0bf257046263be788fe2d3.gif' },
   ],
 }
