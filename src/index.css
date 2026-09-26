@@ -153,6 +153,47 @@ a {
   padding-bottom: 1px;
 }
 
+/* --- Friend banners (지인 갠홈) --- */
+.friend-banner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 14px;
+}
+
+.friend-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.friend-banner img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.friend-banner:hover img {
+  border-color: var(--nebula-violet);
+  transform: translateY(-2px);
+}
+
+.friend-banner__name {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.friend-banner:hover .friend-banner__name {
+  color: var(--nebula-cyan);
+}
+
 /* --- Section headings --- */
 .section-heading {
   display: flex;

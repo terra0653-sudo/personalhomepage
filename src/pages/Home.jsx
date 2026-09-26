@@ -1,5 +1,6 @@
 import { siteConfig } from '../siteConfig.js'
 import CharacterBanners from '../components/CharacterBanners.jsx'
+import FriendBanners from '../components/FriendBanners.jsx'
 import ChatLogSection from '../components/ChatLogSection.jsx'
 import GallerySection from '../components/GallerySection.jsx'
 
@@ -21,6 +22,8 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      <FriendBanners />
 
       <section>
         <div className="section-heading">

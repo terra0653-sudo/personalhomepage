@@ -107,7 +107,7 @@ VITE_SUPABASE_ANON_KEY=여기에_anon_public_키
 ## 4. 홈 화면 꾸미기
 
 레이아웃 코드를 건드릴 필요 없이 `src/siteConfig.js` 파일만 수정하면
-이름, 소개 문구, 프로필 이미지, 링크 목록이 바뀝니다.
+이름, 소개 문구, 프로필 이미지, 링크 목록, 지인 배너가 바뀝니다.
 
 ```js
 export const siteConfig = {
@@ -117,11 +117,16 @@ export const siteConfig = {
   bio: '...',
   avatarUrl: '...',
   links: [{ label: '...', url: '...' }],
+  friends: [{ name: '...', url: '...', imageUrl: '...' }],
 }
 ```
 
+`friends` 배열에 지인 정보를 추가하면 자기소개 바로 아래에 동그란 배너로 표시되고,
+클릭하면 새 탭으로 그 사이트가 열려요. 배열을 비워두면(`friends: []`) 이 섹션 자체가
+화면에 나타나지 않습니다.
+
 색상/폰트를 바꾸고 싶으면 `src/index.css` 맨 위 `:root` 안의 변수들
-(`--ink`, `--paper`, `--accent`, `--coral` 등)만 바꿔도 전체 톤이 바뀝니다.
+(`--bg`, `--nebula-violet`, `--nebula-pink`, `--nebula-cyan` 등)만 바꿔도 전체 톤이 바뀝니다.
 
 ## 5. Netlify에 배포하기
 
