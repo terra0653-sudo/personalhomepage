@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../supabaseClient.js'
 import { upgradeLegacyImages } from '../lib/legacyContent.js'
+import { LOG_CATEGORIES, getCategoryLabel } from '../lib/logCategories.js'
 import RichTextEditor from '../components/RichTextEditor.jsx'
 
 const BUCKET = 'gallery-images'
@@ -15,6 +16,7 @@ export default function LogDetailPage() {
 
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState('')
+  const [editCategory, setEditCategory] = useState(LOG_CATEGORIES[0].value)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [insertingImage, setInsertingImage] = useState(false)
@@ -52,6 +54,7 @@ export default function LogDetailPage() {
 
   function startEditing() {
     setEditTitle(entry.title)
+    setEditCategory(entry.category || LOG_CATEGORIES[0].value)
     contentRef.current = upgradeLegacyImages(entry.content)
     setIsEditing(true)
   }
@@ -68,7 +71,7 @@ export default function LogDetailPage() {
     setSaving(true)
     const { error } = await supabase
       .from('chat_logs')
-      .update({ title: editTitle, content })
+      .update({ title: editTitle, content, category: editCategory })
       .eq('id', id)
     setSaving(false)
 
@@ -152,6 +155,13 @@ export default function LogDetailPage() {
           <h3>로그 수정</h3>
           <div className="form-row">
             <input placeholder="글 제목" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+            <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)}>
+              {LOG_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <RichTextEditor
@@ -205,7 +215,12 @@ export default function LogDetailPage() {
         </div>
       </div>
 
-      <div className="log-detail__date">{new Date(entry.created_at).toLocaleDateString('ko-KR')}</div>
+      <div className="log-detail__date">
+        {entry.category && (
+          <span className="log-detail__category-badge">{getCategoryLabel(entry.category)}</span>
+        )}
+        {new Date(entry.created_at).toLocaleDateString('ko-KR')}
+      </div>
 
       {/* entry.content는 에디터(Tiptap)가 만든 HTML이라 그대로 렌더링합니다.
           예전 텍스트 방식으로 저장된 로그는 upgradeLegacyImages가 이미지로 변환해줍니다.

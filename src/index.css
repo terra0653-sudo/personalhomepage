@@ -331,6 +331,35 @@ section + section {
 }
 
 /* --- Chat log board --- */
+.log-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.log-tabs button {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.log-tabs button:hover {
+  color: var(--text);
+}
+
+.log-tabs button.active {
+  color: #fff;
+  background: linear-gradient(90deg, var(--nebula-violet), var(--nebula-pink));
+  border-color: transparent;
+}
+
 .log-board {
   border-top: 1px solid var(--line);
 }
@@ -370,6 +399,14 @@ section + section {
 
 .log-board__character {
   color: var(--nebula-violet);
+}
+
+.log-board__category-badge {
+  font-size: 11px;
+  color: var(--nebula-cyan);
+  border: 1px solid var(--nebula-cyan);
+  border-radius: 999px;
+  padding: 2px 8px;
 }
 
 /* --- Log detail page --- */
@@ -420,9 +457,20 @@ section + section {
 }
 
 .log-detail__date {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 13px;
   color: var(--muted);
   margin: 8px 0 24px;
+}
+
+.log-detail__category-badge {
+  font-size: 11px;
+  color: var(--nebula-cyan);
+  border: 1px solid var(--nebula-cyan);
+  border-radius: 999px;
+  padding: 2px 8px;
 }
 
 .log-detail__content {

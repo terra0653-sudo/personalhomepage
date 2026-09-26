@@ -2,17 +2,22 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../supabaseClient.js'
 import RichTextEditor from './RichTextEditor.jsx'
+import { LOG_CATEGORIES, getCategoryLabel } from '../lib/logCategories.js'
 
 const BUCKET = 'gallery-images'
 
 /**
  * characterId가 있으면 해당 캐릭터의 로그만, 없으면 전체 로그를 게시판 형식으로 보여줍니다.
  * showForm이 true면 새 로그 작성 폼도 함께 표시합니다 (characterId 필요).
+ * limit이 있으면(홈 화면 미리보기) 카테고리 탭은 표시하지 않습니다.
  */
 export default function ChatLogSection({ characterId, showForm = false, limit, title = '채팅 로그', viewAllTo }) {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState('all')
+
   const [logTitle, setLogTitle] = useState('')
+  const [category, setCategory] = useState(LOG_CATEGORIES[0].value)
   const [saving, setSaving] = useState(false)
   const [insertingImage, setInsertingImage] = useState(false)
 
@@ -28,7 +33,7 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
     setLoading(true)
     let query = supabase
       .from('chat_logs')
-      .select('id, title, created_at, characters(slug, name, pair_name)')
+      .select('id, title, category, created_at, characters(slug, name, pair_name)')
       .order('created_at', { ascending: false })
 
     if (characterId) query = query.eq('character_id', characterId)
@@ -52,7 +57,7 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
     setSaving(true)
     const { error } = await supabase
       .from('chat_logs')
-      .insert([{ title: logTitle, content, character_id: characterId }])
+      .insert([{ title: logTitle, content, category, character_id: characterId }])
     setSaving(false)
 
     if (!error) {
@@ -87,6 +92,9 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
     e.target.value = ''
   }
 
+  const visibleLogs =
+    activeCategory === 'all' ? logs : logs.filter((entry) => entry.category === activeCategory)
+
   return (
     <section>
       <div className="section-heading">
@@ -98,6 +106,13 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
         <form className="form-card" onSubmit={handleSubmit}>
           <div className="form-row">
             <input placeholder="글 제목" value={logTitle} onChange={(e) => setLogTitle(e.target.value)} />
+            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+              {LOG_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <RichTextEditor
@@ -130,20 +145,43 @@ export default function ChatLogSection({ characterId, showForm = false, limit, t
         </form>
       )}
 
+      {!limit && (
+        <div className="log-tabs">
+          <button
+            className={activeCategory === 'all' ? 'active' : ''}
+            onClick={() => setActiveCategory('all')}
+          >
+            전체
+          </button>
+          {LOG_CATEGORIES.map((c) => (
+            <button
+              key={c.value}
+              className={activeCategory === c.value ? 'active' : ''}
+              onClick={() => setActiveCategory(c.value)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading && <p className="empty-state">불러오는 중…</p>}
 
-      {!loading && logs.length === 0 && (
+      {!loading && visibleLogs.length === 0 && (
         <p className="empty-state">
           {isSupabaseConfigured ? '아직 남긴 로그가 없어요.' : 'Supabase 연결 후 로그가 이곳에 자동으로 쌓입니다.'}
         </p>
       )}
 
-      {logs.length > 0 && (
+      {visibleLogs.length > 0 && (
         <div className="log-board">
-          {logs.map((entry) => (
+          {visibleLogs.map((entry) => (
             <Link key={entry.id} to={`/log/${entry.id}`} className="log-board__row">
               <span className="log-board__title">{entry.title}</span>
               <span className="log-board__meta">
+                {entry.category && (
+                  <span className="log-board__category-badge">{getCategoryLabel(entry.category)}</span>
+                )}
                 {!characterId && entry.characters && (
                   <span className="log-board__character">
                     {entry.characters.pair_name || entry.characters.name}
